@@ -1,8 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Supershop.Data;
 using Supershop.Data.Entities;
+using Supershop.Helpers;
 
 
 namespace Supershop.Controllers
@@ -11,16 +13,20 @@ namespace Supershop.Controllers
     {
        
         private readonly IProductsRepository _productsRepository;
+        private readonly IUserHelper _userHelper;
 
-        public ProductsController(IProductsRepository productsRepository)
+        public ProductsController(
+            IProductsRepository productsRepository,
+            IUserHelper userHelper)
         {
             _productsRepository = productsRepository;
+            _userHelper = userHelper;
         }
 
         // GET: Products
         public IActionResult Index()
         {
-            return View(_productsRepository.GetAll());
+            return View(_productsRepository.GetAll().OrderBy(p => p.Name));
         }
 
         // GET: Products/Details/5
@@ -55,6 +61,8 @@ namespace Supershop.Controllers
         {
             if (ModelState.IsValid)
             {
+                //TODO: Modificar para o user que estiver logado
+                product.User = await _userHelper.GetUserByEmailAsync("joaopedropsousa@gmail.com");
                 await _productsRepository.CreateAsync(product);
                 return RedirectToAction(nameof(Index));
             }
@@ -93,7 +101,9 @@ namespace Supershop.Controllers
             {
                 try
                 {
-                    _productsRepository.UpdateAsync(product);
+                    //TODO: Modificar para o user que estiver logado
+                    product.User = await _userHelper.GetUserByEmailAsync("joaopedropsousa@gmail.com");
+                    await _productsRepository.UpdateAsync(product);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
