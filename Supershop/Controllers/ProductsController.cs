@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Supershop.Data;
@@ -12,23 +13,25 @@ using Supershop.Models;
 
 namespace Supershop.Controllers
 {
+
+  
     public class ProductsController : Controller
     {
        
         private readonly IProductsRepository _productsRepository;
         private readonly IUserHelper _userHelper;
-        private readonly IImageHelper _imageHelper;
+        private readonly IBlobHelper _blobHelper;
         private readonly IConverterHelper _converterHelper;
 
         public ProductsController(
             IProductsRepository productsRepository,
             IUserHelper userHelper,
-            IImageHelper imageHelper,
+            IBlobHelper blobHelper,
             IConverterHelper converterHelper)
         {
             _productsRepository = productsRepository;
             _userHelper = userHelper;
-            _imageHelper = imageHelper;
+            _blobHelper = blobHelper;
             _converterHelper = converterHelper;
         }
 
@@ -55,6 +58,7 @@ namespace Supershop.Controllers
             return View(product);
         }
 
+        [Authorize]
         // GET: Products/Create
         public IActionResult Create()
         {
@@ -70,14 +74,15 @@ namespace Supershop.Controllers
         {
             if (ModelState.IsValid)
             {
-                var path = string.Empty;
+                Guid imageId = Guid.Empty;
 
                 if(model.ImageFile != null && model.ImageFile.Length > 0)
-                {                 
-                    path = await _imageHelper.UploadImageAsync(model.ImageFile, "products");
+                {
+                    imageId = await _blobHelper.UploadBlobAsync(model.ImageFile, "products");
+                        
                 }
 
-                var product = _converterHelper.ToProduct(model, path, true);
+                var product = _converterHelper.ToProduct(model, imageId, true);
 
                 //TODO: Modificar para o user que estiver logado
                 product.User = await _userHelper.GetUserByEmailAsync("joaopedropsousa@gmail.com");
@@ -87,8 +92,8 @@ namespace Supershop.Controllers
             return View(model);
         }
 
- 
 
+        [Authorize]
         // GET: Products/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
@@ -122,14 +127,14 @@ namespace Supershop.Controllers
                 try
                 {
 
-                    var path = model.ImageUrl;
+                    Guid imageId = model.ImageID;
 
                     if(model.ImageFile != null && model.ImageFile.Length > 0)
                     {                       
-                        path = await _imageHelper.UploadImageAsync(model.ImageFile, "products");
+                        imageId = await _blobHelper.UploadBlobAsync(model.ImageFile,"products");
                     }
 
-                    var product = _converterHelper.ToProduct(model, path, false);
+                    var product = _converterHelper.ToProduct(model, imageId, false);
 
 
                     //TODO: Modificar para o user que estiver logado

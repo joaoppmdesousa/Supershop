@@ -5,6 +5,7 @@ namespace Supershop.Data.Entities
 {
     public class Product : IEntity
     {
+
         public int Id { get; set; }
 
         [Required]
@@ -17,7 +18,7 @@ namespace Supershop.Data.Entities
 
 
         [Display(Name = "Image")]
-        public string ImageUrl { get; set; }
+        public Guid ImageID { get; set; } 
 
 
         [Display(Name = "Last Purchase")]
@@ -39,17 +40,10 @@ namespace Supershop.Data.Entities
         public User User { get; set; }
 
 
-        public string ImageFullPath
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(ImageUrl))
-                {
-                    return null;
-                }
-
-                return $"https://localhost:44382{ImageUrl.Substring(1)}";
-            }
-        }
+        public string ImageFullPath => ImageID == Guid.Empty
+            ? $"https://supershopcet96.azurewebsites.net/images/noimage.jpg"
+            : $"https://supershopcet96.blob.core.windows.net/products/{ImageID}";
     }
+
+
 }
