@@ -1,7 +1,8 @@
-﻿using Supershop.Data.Entities;
-using Supershop.Models;
-using System;
+﻿using System;
 using System.IO;
+using Supershop.Data.Entities;
+using Supershop.Models;
+
 
 namespace Supershop.Helpers
 {
