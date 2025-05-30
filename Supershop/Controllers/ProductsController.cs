@@ -46,13 +46,14 @@ namespace Supershop.Controllers
         {
             if (id == null)
             {
-                return NotFound();
+                return new NotFoundViewResult("ProductNotFound");
             }
 
             var product = await _productsRepository.GetByIdAsync(id.Value);
             if (product == null)
             {
-                return NotFound();
+                return new NotFoundViewResult("ProductNotFound");
+
             }
 
             return View(product);
@@ -99,13 +100,13 @@ namespace Supershop.Controllers
         {
             if (id == null)
             {
-                return NotFound();
+                return new NotFoundViewResult("ProductNotFound");
             }
 
             var product = await _productsRepository.GetByIdAsync(id.Value);
                 if (product == null)
             {
-                return NotFound();
+                return new NotFoundViewResult("ProductNotFound");
             }
           
             var model = _converterHelper.ToProductViewModel(product);
@@ -163,7 +164,7 @@ namespace Supershop.Controllers
         {
             if (id == null)
             {
-                return NotFound();
+                return new NotFoundViewResult("ProductNotFound");
             }
 
             var product = await  _productsRepository.GetByIdAsync(id.Value);
@@ -171,7 +172,7 @@ namespace Supershop.Controllers
 
             if (product == null)
             {
-                return NotFound();
+                return new NotFoundViewResult("ProductNotFound");
             }
 
             return View(product);
@@ -185,6 +186,11 @@ namespace Supershop.Controllers
             var product = await _productsRepository.GetByIdAsync(id);
             await _productsRepository.DeleteAsync(product);
             return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult ProductNotFound()
+        {
+            return View();
         }
 
     }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Supershop.Data;
+using System;
 
 namespace Supershop
 {
@@ -16,12 +17,22 @@ namespace Supershop
 
         private static void RunSeeding(IHost host)
         {
-            var scopeFactory = host.Services.GetService<IServiceScopeFactory>();
-            using (var scope = scopeFactory.CreateScope())
+            try
             {
-                var seeder = scope.ServiceProvider.GetService<SeedDb>();
-                seeder.SeedAsync().Wait();
+                var scopeFactory = host.Services.GetService<IServiceScopeFactory>();
+                using (var scope = scopeFactory.CreateScope())
+                {
+                    var seeder = scope.ServiceProvider.GetService<SeedDb>();
+                    seeder.SeedAsync().Wait();
 
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Seeding failed: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                throw; // Re-throw to ensure the application fails visibly during debugging
             }
         }
 
