@@ -53,6 +53,8 @@ namespace Supershop
             services.AddScoped<IConverterHelper, ConverterHelper>();
 
             services.AddScoped<IProductsRepository, ProductRepository>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
+
 
             services.ConfigureApplicationCookie(options =>
             {
