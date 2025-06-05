@@ -40,5 +40,17 @@ namespace Supershop.Controllers
 
             return View(model);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AddProduct(AddItemViewModel model)
+        {
+            if(ModelState.IsValid)
+            {
+                await _orderRepository.AddItemToOrderAsync(model, this.User.Identity.Name);
+                return RedirectToAction(nameof(Create));
+            }
+
+            return View(model);
+        }
     }
 }
