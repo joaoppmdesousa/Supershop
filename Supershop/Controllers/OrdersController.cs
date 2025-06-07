@@ -44,7 +44,7 @@ namespace Supershop.Controllers
         [HttpPost]
         public async Task<IActionResult> AddProduct(AddItemViewModel model)
         {
-            if(ModelState.IsValid)
+            if (ModelState.IsValid)
             {
                 await _orderRepository.AddItemToOrderAsync(model, this.User.Identity.Name);
                 return RedirectToAction(nameof(Create));
@@ -53,9 +53,9 @@ namespace Supershop.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> DeleteItem(int ? id)
+        public async Task<IActionResult> DeleteItem(int? id)
         {
-            if(id == null)
+            if (id == null)
             {
                 return NotFound();
             }
@@ -87,5 +87,18 @@ namespace Supershop.Controllers
             return RedirectToAction("Create");
         }
 
+
+        public async Task<IActionResult> ConfirmOrder()
+        {
+            var response = await _orderRepository.ConfirmOrderAsync(this.User.Identity.Name);
+
+            if (response)
+            {
+                return RedirectToAction("Index");
+            }
+
+            return RedirectToAction("Create");
+
+        }
     }
 }
