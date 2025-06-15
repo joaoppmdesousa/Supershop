@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
@@ -29,6 +30,24 @@ namespace Supershop.Data
             await _userHelper.CheckRoleAsync("Admin");
             await _userHelper.CheckRoleAsync("Customer");
 
+            if (!_context.Countries.Any())
+            {
+                var cities = new List<City>
+                {
+                    new City { Name = "Setúbal" },
+                    new City { Name = "Porto" },
+                    new City { Name = "Lisboa" }
+                };
+
+                _context.Countries.Add(new Country
+                {
+                    Name = "Portugal",
+                    Cities = cities
+                });
+
+                await _context.SaveChangesAsync();
+            }
+
 
             var user = await _userHelper.GetUserByEmailAsync("joaopedropsousa@gmail.com");
 
@@ -41,6 +60,9 @@ namespace Supershop.Data
                     Email = "joaopedropsousa@gmail.com",
                     UserName = "joaopedropsousa@gmail.com",
                     PhoneNumber = "123456789",
+                    Address = "Avenida José Mourinho 45",
+                    CityId = _context.Countries.FirstOrDefault().Id,
+                    City = _context.Countries.FirstOrDefault().Cities.FirstOrDefault()
                 };
 
                 var result = await _userHelper.AddUserAsync(user, "123456");
