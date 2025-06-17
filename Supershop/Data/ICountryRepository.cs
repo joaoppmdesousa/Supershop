@@ -21,6 +21,12 @@ namespace Supershop.Data
 
         Task<int> DeleteCityAsync(City city);
 
+        IEnumerable<SelectListItem> GetComboCountries();
+
+        IEnumerable<SelectListItem> GetComboCities(int countryId);
+
+        Task<Country> GetCountryAsync(City city);
+
 
     }
 }
