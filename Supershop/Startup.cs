@@ -6,12 +6,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Supershop.Data;
 using Supershop.Data.Entities;
 using Supershop.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Supershop
@@ -31,6 +33,7 @@ namespace Supershop
 
             services.AddIdentity<User, IdentityRole>(cfg =>
             {
+                cfg.Tokens.AuthenticatorTokenProvider = TokenOptions.DefaultAuthenticatorProvider;
                 cfg.User.RequireUniqueEmail = true;
                 cfg.Password.RequireDigit = false;  
                 cfg.Password.RequiredUniqueChars = 0;
@@ -40,7 +43,22 @@ namespace Supershop
                 cfg.Password.RequiredLength = 6;
 
             })
+              .AddDefaultTokenProviders()
               .AddEntityFrameworkStores<DataContext>();
+
+
+            services.AddAuthentication()
+                .AddCookie()
+                .AddJwtBearer(cfg =>
+                {
+                    cfg.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidIssuer = this.Configuration["Tokens:Issuer"],
+                        ValidAudience = this.Configuration["Tokens:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                               Encoding.UTF8.GetBytes(this.Configuration["Tokens:Key"]))
+                    };
+                });
 
             services.AddDbContext<DataContext>(cfg =>
             {
@@ -51,6 +69,8 @@ namespace Supershop
             services.AddScoped<IUserHelper, UserHelper>();
             services.AddScoped<IBlobHelper, BlobHelper>();
             services.AddScoped<IConverterHelper, ConverterHelper>();
+            services.AddScoped<IEmailHelper, EmailHelper>();
+
 
             services.AddScoped<IProductsRepository, ProductRepository>();
             services.AddScoped<IOrderRepository, OrderRepository>();

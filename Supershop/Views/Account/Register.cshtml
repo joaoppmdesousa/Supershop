@@ -52,7 +52,6 @@
                 <span asp-validation-for="PhoneNumber" class="text-warning"></span>
             </div>
 
-
             <div class="form-group">
                 <label asp-for="Password">Password</label>
                 <input asp-for="Password" type="password" class="form-control" />
@@ -72,15 +71,23 @@
     </div>
 </div>
 
+<div class="text-success">
+    <p>
+        @ViewBag.Message
+    </p>
+</div>
+
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 
     <script type="text/javascript">
         $(document).ready(function () {
             $("#CountryId").change(function () {
                 $("#CityId").empty();
                 $.ajax({
-                    url: '@Url.Action("GetCitiesAsync", "Account")',
+                url: '@Url.Action("GetCitiesAsync", "Account")',
                     type: 'POST',
                     dataType: 'json',
                     data: {countryId:$("#CountryId").val()},
@@ -103,5 +110,3 @@
         });
     </script>
 }
-
-

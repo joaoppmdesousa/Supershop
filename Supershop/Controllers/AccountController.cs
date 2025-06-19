@@ -1,11 +1,18 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Ini;
+using Microsoft.IdentityModel.Tokens;
 using Supershop.Data;
 using Supershop.Data.Entities;
 using Supershop.Helpers;
 using Supershop.Models;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
 
 
 namespace Supershop.Controllers
@@ -13,12 +20,20 @@ namespace Supershop.Controllers
     public class AccountController : Controller
     {
         private readonly IUserHelper _userHelper;
+        private readonly IEmailHelper _emailHelper;
         private readonly ICountryRepository _countryRepository;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(IUserHelper userHelper, ICountryRepository countryRepository)
+        public AccountController(
+            IUserHelper userHelper,
+            IEmailHelper emailHelper,
+            ICountryRepository countryRepository,
+            IConfiguration configuration)
         {
             _userHelper = userHelper;
+            _emailHelper = emailHelper;
             _countryRepository = countryRepository;
+            _configuration = configuration;
         }
 
 
@@ -104,18 +119,23 @@ namespace Supershop.Controllers
                     }
 
 
-                    var loginViewModel = new LoginViewModel
-                    {
-                        Password = model.Password,
-                        RememberMe = false,
-                        Username = model.Username,
-                    };
+                    
 
-                    var result2 = await _userHelper.LoginAsync(loginViewModel);
+                    string myToken = await _userHelper.GenerateEmailConfirmationTokenAsync(user);
+                    string tokenLink = Url.Action("ConfirmEmail", "Account", new 
+                    { 
+                        userId = user.Id,
+                        token = myToken 
+                    }, protocol: HttpContext.Request.Scheme);
 
-                    if (result2.Succeeded)
+                    Response response = _emailHelper.SendEmail(model.Username,"Email confirmation", $"<h1>Email Confirmation</h1>" +
+                        $"To allow the user, " +
+                        $"please click in this link:</br></br><a href = \"{tokenLink}\">Confirm Email</a>");
+
+                    if (response.IsSuccess)
                     {
-                        return RedirectToAction("Index", "Home");
+                        ViewBag.Message = "The instructions to allow you user has been sent to email";
+                        return View(model);
                     }
 
                     ModelState.AddModelError(string.Empty, "The user couldn't be logged");
@@ -232,6 +252,74 @@ namespace Supershop.Controllers
 
             return this.View(model);
         }
+
+
+        [HttpPost]
+        public async Task<IActionResult> CreateToken([FromBody] LoginViewModel model)
+        {
+            if (this.ModelState.IsValid)
+            {
+                var user = await _userHelper.GetUserByEmailAsync(model.Username);
+                if (user != null)
+                {
+                    var result = await _userHelper.ValidatePasswordAsync(
+                        user,
+                        model.Password);
+
+                    if (result.Succeeded)
+                    {
+                        var claims = new[]
+                        {
+                            new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                        };
+
+                        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Tokens:Key"]));
+                        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                        var token = new JwtSecurityToken(
+                            _configuration["Tokens:Issuer"],
+                            _configuration["Tokens:Audience"],
+                            claims,
+                            expires: DateTime.UtcNow.AddDays(15),
+                            signingCredentials: credentials);
+                        var results = new
+                        {
+                            token = new JwtSecurityTokenHandler().WriteToken(token),
+                            expiration = token.ValidTo
+                        };
+
+                        return this.Created(string.Empty, results);
+
+                    }
+                }
+            }
+
+            return BadRequest();
+        }
+
+        public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        {
+            if(string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token))
+            {
+                return NotFound(); 
+            }
+
+            var user = await _userHelper.GetUserByIdAsync(userId);
+            if(user == null)
+            {
+                return NotFound();
+            }
+
+            var result = await _userHelper.ConfirmEmailAsync(user, token);
+            if (!result.Succeeded)
+            {
+                return NotFound();
+            }
+
+            return View();
+        }
+
+
 
         public IActionResult NotAuthorized()
         {
